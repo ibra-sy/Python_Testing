@@ -13,6 +13,13 @@ def loadCompetitions():
     with open("competitions.json") as comps:
         listOfCompetitions = json.load(comps)["competitions"]
         return listOfCompetitions
+def saveClubs(clubs_data):
+    with open('clubs.json', 'w') as c:
+        json.dump({'clubs': clubs_data}, c, indent=4)
+        
+def saveCompetitions(competitions_data):
+    with open('competitions.json', 'w') as comps:
+        json.dump({'competitions': competitions_data}, comps, indent=4)
 
 
 app = Flask(__name__)
@@ -75,20 +82,19 @@ def purchasePlaces():
         flash("You cannot book more than 12 places for a single competition.")
     elif placesRequired > int(club["points"]):
         flash("You don't have enough points to book that many places.")
-    elif placesRequired > int(competition["numberOfPlaces"]):
+    elif placesRequired > int(competition['numberOfPlaces']):
         flash("There are not enough places available in this competition.")
     else:
-        club["points"] = int(club["points"]) - placesRequired
-        competition["numberOfPlaces"] = (
-            int(competition["numberOfPlaces"]) - placesRequired
-        )
-        flash("Great-booking complete!")
+        club['points'] = int(club['points']) - placesRequired
+        competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
+        saveClubs(clubs)  # Sauvegarder les données des clubs
+        saveCompetitions(competitions) # Sauvegarder les données des compétitions
+        flash('Great-booking complete!')
 
-    flash("Great-booking complete!")
-    return render_template("welcome.html", club=club, competitions=competitions)
+    available_competitions = [comp for comp in competitions if datetime.strptime(comp['date'], "%Y-%m-%d %H:%M:%S") > datetime.now()]
 
+    return render_template("welcome.html", club=club, competitions=available_competitions)
 
-# TODO: Add route for points display
 
 
 @app.route("/logout")
