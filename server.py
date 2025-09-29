@@ -13,9 +13,12 @@ def loadCompetitions():
     with open("competitions.json") as comps:
         listOfCompetitions = json.load(comps)["competitions"]
         return listOfCompetitions
+
+
 def saveClubs(clubs_data):
     with open('clubs.json', 'w') as c:
         json.dump({'clubs': clubs_data}, c, indent=4)
+
         
 def saveCompetitions(competitions_data):
     with open('competitions.json', 'w') as comps:
@@ -24,6 +27,7 @@ def saveCompetitions(competitions_data):
 
 app = Flask(__name__)
 app.secret_key = "something_special"
+app.jinja_env.globals.update(datetime=datetime)
 
 competitions = loadCompetitions()
 clubs = loadClubs()
@@ -42,27 +46,24 @@ def showSummary():
         return redirect(url_for("index"))
     club = clubs_found[0]
 
-    available_competitions = [
-        comp
-        for comp in competitions
-        if datetime.strptime(comp["date"], "%Y-%m-%d %H:%M:%S") > datetime.now()
-    ]
     return render_template(
-        "welcome.html", club=club, competitions=available_competitions
+        "welcome.html", club=club, competitions=competitions
     )
 
 
 @app.route("/book/<competition>/<club>")
 def book(competition, club):
-    foundClub = [c for c in clubs if c["name"] == club][0]
-    foundCompetition = [c for c in competitions if c["name"] == competition][0]
-    if foundClub and foundCompetition:
-        return render_template(
-            "booking.html", club=foundClub, competition=foundCompetition
-        )
-    else:
-        flash("Something went wrong-please try again")
-        return render_template("welcome.html", club=club, competitions=competitions)
+    clubs_found = [c for c in clubs if c["name"] == club]
+    competitions_found = [c for c in competitions if c["name"] == competition]
+
+    # Vérification pour éviter un crash si le club ou la compétition n'est pas trouvé
+    if not clubs_found or not competitions_found:
+        flash("Une erreur est survenue. Le club ou la compétition est introuvable.")
+        return redirect(url_for('index'))
+    
+    foundClub = clubs_found[0]
+    foundCompetition = competitions_found[0]
+    return render_template("booking.html", club=foundClub, competition=foundCompetition)
 
 
 @app.route("/purchasePlaces", methods=["POST"])
@@ -78,9 +79,11 @@ def purchasePlaces():
 
     placesRequired = int(request.form["places"])
 
-    if placesRequired > 12:
+    if placesRequired <= 0:
+        flash("You must book at least 1 place.")
+    elif placesRequired > 12:
         flash("You cannot book more than 12 places for a single competition.")
-    elif placesRequired > int(club["points"]):
+    elif placesRequired > int(club['points']):
         flash("You don't have enough points to book that many places.")
     elif placesRequired > int(competition['numberOfPlaces']):
         flash("There are not enough places available in this competition.")
@@ -91,9 +94,7 @@ def purchasePlaces():
         saveCompetitions(competitions) # Sauvegarder les données des compétitions
         flash('Great-booking complete!')
 
-    available_competitions = [comp for comp in competitions if datetime.strptime(comp['date'], "%Y-%m-%d %H:%M:%S") > datetime.now()]
-
-    return render_template("welcome.html", club=club, competitions=available_competitions)
+    return render_template("welcome.html", club=club, competitions=competitions)
 
 
 
@@ -103,4 +104,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)
