@@ -1,6 +1,6 @@
 import json
 from flask import Flask, render_template, request, redirect, url_for, flash
-
+from datetime import datetime
 
 def loadClubs():
     with open('clubs.json') as c:
@@ -31,7 +31,9 @@ def showSummary():
         flash("Désoler, code incorrect. Email innexitant.")
         return redirect(url_for('index'))
     club = clubs_found[0]
-    return render_template('welcome.html',club=club,competitions=competitions)
+
+    available_competitions = [comp for comp in competitions if datetime.strptime(comp['date'], "%Y-%m-%d %H:%M:%S") > datetime.now()]
+    return render_template('welcome.html',club=club,competitions=available_competitions)
 
 
 @app.route('/book/<competition>/<club>')
