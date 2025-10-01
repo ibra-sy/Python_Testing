@@ -3,31 +3,27 @@
         {
             "name": "Spring Festival",
             "date": "2020-03-27 10:00:00",
-            "numberOfPlaces": "25"
+            "numberOfPlaces": 22
         },
         {
             "name": "Fall Classic",
             "date": "2020-10-22 13:30:00",
             "numberOfPlaces": "13"
-            
         },
         {
             "name": "Foot Classic",
             "date": "2026-10-22 13:30:00",
-            "numberOfPlaces": "13"
-            
+            "numberOfPlaces": 12
         },
         {
             "name": "Summer Cup",
             "date": "2028-01-22 13:30:00",
-            "numberOfPlaces": "13"
-            
+            "numberOfPlaces": 3
         },
         {
             "name": "Winter Classic",
             "date": "2025-10-22 13:30:00",
             "numberOfPlaces": "13"
-            
         }
     ]
 }

@@ -1,28 +1,16 @@
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summary | GUDLFT Registration</title>
-</head>
-<body>
-    <a href="{{ url_for('logout') }}">Logout</a>
+{% extends "base.html" %}
 
-    <h2>Welcome, {{ club.name }}!</h2>
+{% block title %}Welcome, {{ club.name }}!{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Welcome, {{ club.name }}!</h2>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
     <p>Points available: <strong>{{ club.points }}</strong></p>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-
     <hr>
 
-    <h3>Upcoming Competitions:</h3>
+    <h3>Competitions</h3>
     <ul>
         {% for comp in competitions %}
         <li>
@@ -33,11 +21,9 @@
             {% if datetime.strptime(comp.date, '%Y-%m-%d %H:%M:%S') > datetime.now() and comp.numberOfPlaces|int > 0 %}
                 <a href="{{ url_for('book', competition=comp.name, club=club.name) }}">Book Places</a>
             {% else %}
-                <p><strong>Réservation indisponible</strong></p>
+                <p><strong>Booking closed</strong></p>
             {% endif %}
         </li>
-        <hr />
         {% endfor %}
     </ul>
-</body>
-</html>
+{% endblock %}
