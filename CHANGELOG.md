@@ -13,4 +13,3 @@
 
 #### Référence
 - Dépôt d'origine: https://github.com/Sedrickgael/Python_Testing
-
