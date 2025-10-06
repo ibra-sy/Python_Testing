@@ -76,3 +76,49 @@ Merci !
     [coverage](https://coverage.readthedocs.io/en/coverage-5.1/) you should add to your project.
 
  6. Flake8 Report
+
+## Corrections et améliorations (projet local)
+
+Cette section documente les corrections principales apportées par rapport au dépôt d'origine
+[Sedrickgael/Python_Testing](https://github.com/Sedrickgael/Python_Testing).
+
+- Limitation cumulative des réservations: Un club ne peut pas réserver plus de 12 places
+  au total pour une même compétition, même en plusieurs fois (rafraîchissements ou
+  transactions séparées). Le serveur conserve désormais un suivi cumulé par couple
+  club/compétition.
+  - Backend: ajout d'un champ `bookings` sur chaque compétition pour stocker
+    `{ "NomClub": nombre_total_reservations }`.
+  - Route `purchase_places`: refuse si `déjà_réservé >= 12` ou si `déjà_réservé + demandé > 12`,
+    avec messages d'erreur explicites.
+  - Route `book`: calcule `already_booked` et `remaining_quota` (12 - déjà réservé) et les envoie au template.
+
+- Normalisation des types: conversion systématique des champs numériques chargés depuis JSON,
+  notamment `club.points` et `competition.numberOfPlaces`, afin d'éviter les erreurs de comparaison
+  entre chaînes et entiers.
+
+- Améliorations UI (templates):
+  - `templates/booking.html`: affiche le nombre déjà réservé et le quota restant; limite dynamiquement
+    l'attribut `max` du champ numérique; désactive le formulaire lorsque le quota restant est nul.
+  - Messages flash explicites lorsque la limite est atteinte ou dépassée.
+
+- Persistance: les mises à jour (`points`, `numberOfPlaces`, `bookings`) sont sauvegardées dans
+  `clubs.json` et `competitions.json` après chaque réservation réussie.
+
+### Fichiers impactés
+
+- `server.py`: suivi cumulé `bookings`, normalisation des types, validations et messages.
+- `templates/booking.html`: affichage des compteurs et restrictions du formulaire.
+
+### Comment tester la limite des 12 places
+
+1. Démarrer l'application.
+2. Se connecter avec un club valide (voir `clubs.json`).
+3. Aller sur une compétition disposant de places.
+4. Tenter plusieurs réservations successives jusqu'à atteindre 12 au total:
+   - Avant d'atteindre 12: la réservation réussit, les points et places diminuent, le compteur cumulé augmente.
+   - À 12: le bouton est désactivé et un message indique que le maximum est atteint.
+   - Si vous tentez de dépasser 12: message flash indiquant le nombre restant possible.
+
+### Références
+
+- Dépôt d'origine: [Sedrickgael/Python_Testing](https://github.com/Sedrickgael/Python_Testing)

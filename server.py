@@ -61,6 +61,21 @@ app.jinja_env.globals.update(datetime=datetime)
 competitions = load_competitions()
 clubs = load_clubs()
 
+# Normalize data types and ensure bookings tracking exists
+for club in clubs:
+    try:
+        club["points"] = int(club.get("points", 0))
+    except (ValueError, TypeError):
+        club["points"] = 0
+
+for competition in competitions:
+    try:
+        competition["numberOfPlaces"] = int(competition.get("numberOfPlaces", 0))
+    except (ValueError, TypeError):
+        competition["numberOfPlaces"] = 0
+    if not isinstance(competition.get("bookings"), dict):
+        competition["bookings"] = {}
+
 # ----------------------------------------------------------------------
 # Routes
 # ----------------------------------------------------------------------
@@ -100,8 +115,17 @@ def book(competition: str, club: str):
         flash("Something went wrong. The club or competition " "could not be found.")
         return redirect(url_for("index"))
 
+    # Compute cumulative bookings for this club
+    bookings = found_competition.get("bookings", {})
+    already_booked = int(bookings.get(found_club["name"], 0))
+    remaining_quota = max(0, 12 - already_booked)
+
     return render_template(
-        "booking.html", club=found_club, competition=found_competition
+        "booking.html",
+        club=found_club,
+        competition=found_competition,
+        already_booked=already_booked,
+        remaining_quota=remaining_quota,
     )
 
 
@@ -128,11 +152,21 @@ def purchase_places():
 
     club_points = int(club.get("points", 0))
     competition_places = int(competition.get("numberOfPlaces", 0))
+    bookings = competition.get("bookings", {})
+    already_booked = int(bookings.get(club_name, 0))
 
     if places_required <= 0:
         flash("You must book at least 1 place.")
     elif places_required > 12:
         flash("You cannot book more than 12 places in a single transaction.")
+    elif already_booked >= 12:
+        flash("You have already booked the maximum of 12 places for this competition.")
+    elif already_booked + places_required > 12:
+        remaining = 12 - already_booked
+        flash(
+            f"Booking exceeds limit. You already have {already_booked}; "
+            f"you can only add {remaining} more to reach 12."
+        )
     elif places_required > club_points:
         flash(f"Not enough points. You have {club_points} but need {places_required}.")
     elif places_required > competition_places:
@@ -140,6 +174,8 @@ def purchase_places():
     else:
         club["points"] = club_points - places_required
         competition["numberOfPlaces"] = competition_places - places_required
+        bookings[club_name] = already_booked + places_required
+        competition["bookings"] = bookings
         save_clubs(clubs)
         save_competitions(competitions)
         flash("Great! Booking complete.")
@@ -150,7 +186,7 @@ def purchase_places():
 @app.route("/points", methods=["GET"])
 def points_dashboard():
     """Render the public points leaderboard."""
-    return render_template("points.html", clubs=clubs)
+    return render_template("points.html", clubs=clubs, competitions=competitions)
 
 
 @app.route("/logout", methods=["GET"])

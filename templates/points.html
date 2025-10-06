@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Clubs Points & Bookings{% endblock %}
+
+{% block content %}
+    <h2>Clubs Points & Bookings</h2>
+
+    <table border="1" cellspacing="0" cellpadding="6">
+        <thead>
+            <tr>
+                <th>Club</th>
+                <th>Points restants</th>
+                {% for comp in competitions %}
+                    <th>{{ comp.name }} (booked)</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for club in clubs %}
+            <tr>
+                <td>{{ club.name }}</td>
+                <td>{{ club.points }}</td>
+                {% for comp in competitions %}
+                    {% set booked = comp.bookings.get(club.name, 0) if comp.bookings is defined else 0 %}
+                    <td>{{ booked }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p style="margin-top: 12px;"><a href="{{ url_for('index') }}">Retour</a></p>
+{% endblock %}
+
+

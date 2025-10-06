@@ -13,12 +13,12 @@
         {
             "name": "Foot Classic",
             "date": "2026-10-22 13:30:00",
-            "numberOfPlaces": 2
+            "numberOfPlaces": 30
         },
         {
             "name": "Summer Cup",
             "date": "2028-01-22 13:30:00",
-            "numberOfPlaces": 3
+            "numberOfPlaces": 32
         },
         {
             "name": "Winter Classic",
