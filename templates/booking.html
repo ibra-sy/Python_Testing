@@ -10,10 +10,10 @@
     <form action="{{ url_for('purchase_places') }}" method="post">
         <input type="hidden" name="club" value="{{ club.name }}">
         <input type="hidden" name="competition" value="{{ competition.name }}">
-        
+
         <label for="places">How many places to book?</label>
         <input type="number" name="places" id="places" min="1" max="12" required>
-        
+
         <button type="submit">Book</button>
     </form>
     <hr>

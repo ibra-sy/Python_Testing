@@ -1,59 +1,86 @@
-"""
-Main Flask application file for the GUDLFT registration system.
-"""
+"""Main Flask application file for the GUDLFT registration system."""
 
 import json
 from datetime import datetime
+from pathlib import Path
+
 from flask import Flask, flash, redirect, render_template, request, url_for
+
+# ----------------------------------------------------------------------
+# Utility functions
+# ----------------------------------------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def load_json(filename: str, key: str):
+    """Load data from a JSON file."""
+    filepath = BASE_DIR / filename
+    with open(filepath, encoding="utf-8") as file:
+        return json.load(file)[key]
+
+
+def save_json(filename: str, key: str, data):
+    """Save data to a JSON file."""
+    filepath = BASE_DIR / filename
+    with open(filepath, "w", encoding="utf-8") as file:
+        json.dump({key: data}, file, indent=4)
 
 
 def load_clubs():
-    """Loads clubs from a JSON file."""
-    with open("clubs.json") as c:
-        list_of_clubs = json.load(c)["clubs"]
-        return list_of_clubs
+    """Load all clubs from the JSON file."""
+    return load_json("clubs.json", "clubs")
 
 
 def load_competitions():
-    """Loads competitions from a JSON file."""
-    with open("competitions.json") as comps:
-        list_of_competitions = json.load(comps)["competitions"]
-        return list_of_competitions
+    """Load all competitions from the JSON file."""
+    return load_json("competitions.json", "competitions")
 
 
 def save_clubs(clubs_data):
-    """Saves clubs data to a JSON file."""
-    with open("clubs.json", "w") as c:
-        json.dump({"clubs": clubs_data}, c, indent=4)
+    """Save clubs to the JSON file."""
+    save_json("clubs.json", "clubs", clubs_data)
 
 
 def save_competitions(competitions_data):
-    """Saves competitions data to a JSON file."""
-    with open("competitions.json", "w") as comps:
-        json.dump({"competitions": competitions_data}, comps, indent=4)
+    """Save competitions to the JSON file."""
+    save_json("competitions.json", "competitions", competitions_data)
 
+
+# ----------------------------------------------------------------------
+# Flask app initialization
+# ----------------------------------------------------------------------
 
 app = Flask(__name__)
 app.secret_key = "something_special"
 
-# Makes the 'datetime' object available in all Jinja2 templates.
+# Make datetime globally available in Jinja templates
 app.jinja_env.globals.update(datetime=datetime)
 
-# Load data at application startup.
+# Load data once at startup
 competitions = load_competitions()
 clubs = load_clubs()
 
+# ----------------------------------------------------------------------
+# Routes
+# ----------------------------------------------------------------------
 
-@app.route("/")
+
+@app.route("/", methods=["GET"])
 def index():
-    """Renders the login page."""
+    """Render the login page."""
     return render_template("index.html")
 
 
 @app.route("/showSummary", methods=["POST"])
 def show_summary():
-    """Handles user login and displays the main welcome page."""
-    club = next((c for c in clubs if c["email"] == request.form["email"]), None)
+    """Handle user login and display the main welcome page."""
+    email = request.form.get("email")
+    if not email:
+        flash("Please enter an email address.")
+        return redirect(url_for("index"))
+
+    club = next((c for c in clubs if c.get("email") == email), None)
     if not club:
         flash("Sorry, that email was not found.")
         return redirect(url_for("index"))
@@ -61,25 +88,32 @@ def show_summary():
     return render_template("welcome.html", club=club, competitions=competitions)
 
 
-@app.route("/book/<competition>/<club>")
-def book(competition, club):
-    """Renders the booking page for a specific competition and club."""
-    found_club = next((c for c in clubs if c["name"] == club), None)
-    found_competition = next((c for c in competitions if c["name"] == competition), None)
+@app.route("/book/<competition>/<club>", methods=["GET"])
+def book(competition: str, club: str):
+    """Render the booking page for a specific competition and club."""
+    found_club = next((c for c in clubs if c.get("name") == club), None)
+    found_competition = next(
+        (c for c in competitions if c.get("name") == competition), None
+    )
 
     if not found_club or not found_competition:
-        flash("Something went wrong. The club or competition could not be found.")
+        flash("Something went wrong. The club or competition " "could not be found.")
         return redirect(url_for("index"))
 
-    return render_template("booking.html", club=found_club, competition=found_competition)
+    return render_template(
+        "booking.html", club=found_club, competition=found_competition
+    )
 
 
 @app.route("/purchasePlaces", methods=["POST"])
 def purchase_places():
-    """Handles the logic for purchasing places in a competition."""
-    club = next((c for c in clubs if c["name"] == request.form["club"]), None)
+    """Handle the logic for purchasing places in a competition."""
+    club_name = request.form.get("club")
+    competition_name = request.form.get("competition")
+
+    club = next((c for c in clubs if c.get("name") == club_name), None)
     competition = next(
-        (c for c in competitions if c["name"] == request.form["competition"]), None
+        (c for c in competitions if c.get("name") == competition_name), None
     )
 
     if not club or not competition:
@@ -87,20 +121,20 @@ def purchase_places():
         return redirect(url_for("index"))
 
     try:
-        places_required = int(request.form["places"])
+        places_required = int(request.form.get("places", 0))
     except (ValueError, TypeError):
         flash("Invalid number of places provided.")
         return render_template("welcome.html", club=club, competitions=competitions)
 
-    club_points = int(club["points"])
-    competition_places = int(competition["numberOfPlaces"])
+    club_points = int(club.get("points", 0))
+    competition_places = int(competition.get("numberOfPlaces", 0))
 
     if places_required <= 0:
         flash("You must book at least 1 place.")
     elif places_required > 12:
         flash("You cannot book more than 12 places in a single transaction.")
     elif places_required > club_points:
-        flash(f"You don't have enough points. You need {places_required} but only have {club_points}.")
+        flash(f"Not enough points. You have {club_points} but need {places_required}.")
     elif places_required > competition_places:
         flash(f"Not enough places available. Only {competition_places} left.")
     else:
@@ -113,17 +147,21 @@ def purchase_places():
     return render_template("welcome.html", club=club, competitions=competitions)
 
 
-@app.route("/points")
+@app.route("/points", methods=["GET"])
 def points_dashboard():
-    """Renders the public points leaderboard."""
+    """Render the public points leaderboard."""
     return render_template("points.html", clubs=clubs)
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["GET"])
 def logout():
-    """Logs the user out and redirects to the login page."""
+    """Log the user out and redirect to the login page."""
     return redirect(url_for("index"))
 
+
+# ----------------------------------------------------------------------
+# Main entry point
+# ----------------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
