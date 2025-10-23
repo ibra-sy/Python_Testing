@@ -196,9 +196,10 @@ def logout():
 
 
 # Compatibility route for tests expecting '/booking'
-@app.route("/booking", methods=["GET"]) 
+@app.route("/booking", methods=["GET"])
 def booking_alias():
     return redirect(url_for("index"))
+
 
 # ----------------------------------------------------------------------
 # Main entry point
