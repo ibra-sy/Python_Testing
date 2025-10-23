@@ -3,27 +3,41 @@
         {
             "name": "Spring Festival",
             "date": "2020-03-27 10:00:00",
-            "numberOfPlaces": 22
+            "numberOfPlaces": 13,
+            "bookings": {
+                "Simply Lift": 9
+            }
         },
         {
             "name": "Fall Classic",
             "date": "2020-10-22 13:30:00",
-            "numberOfPlaces": "13"
+            "numberOfPlaces": 9,
+            "bookings": {
+                "Simply Lift": 4
+            }
         },
         {
             "name": "Foot Classic",
             "date": "2026-10-22 13:30:00",
-            "numberOfPlaces": 30
+            "numberOfPlaces": 6,
+            "bookings": {}
         },
         {
             "name": "Summer Cup",
             "date": "2028-01-22 13:30:00",
-            "numberOfPlaces": 32
+            "numberOfPlaces": 16,
+            "bookings": {
+                "Iron Temple": 4,
+                "She Lifts": 12
+            }
         },
         {
             "name": "Winter Classic",
             "date": "2025-10-22 13:30:00",
-            "numberOfPlaces": "13"
+            "numberOfPlaces": 9,
+            "bookings": {
+                "Iron Temple": 4
+            }
         }
     ]
 }
